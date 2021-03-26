@@ -1,0 +1,13 @@
+---
+
+- hosts: all
+  tasks:
+
+  - name: Echo "Hello world!" on each node as root
+    become: yes
+    command: "echo 'Hello World!'"
+    register: echo_result
+
+  - name: Show the result of the echo command
+    debug:
+      var: echo_result.stdout

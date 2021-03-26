@@ -1,0 +1,18 @@
+---
+
+terraform_version: "{{ dev_env.terraform.version }}"
+terraform_arch: "linux_{% if ansible_architecture == 'x86_64' %}amd64{% else %}{{ ansible_architecture }}{% endif %}"
+terraform_download_base_url: "https://releases.hashicorp.com/terraform"
+terraform_zip_file: "terraform_{{ terraform_version }}_{{ terraform_arch }}.zip"
+terraform_url: "{{ terraform_download_base_url }}/{{ terraform_version }}/{{ terraform_zip_file }}"
+terraform_sha256_url: "{{ terraform_download_base_url }}/{{ terraform_version }}/terraform_{{ terraform_version }}_SHA256SUMS"
+
+libvirt_provider_repo_url: "https://github.com/{{ dev_env.terraform.providers.libvirt.repo.organisation }}/{{ dev_env.terraform.providers.libvirt.repo.name }}"
+
+libvirt_provider:
+  source: "{{ dev_env.terraform.providers.libvirt.repo.organisation }}/{{ dev_env.terraform.providers.libvirt.repo.name | replace('terraform-provider-', '') }}"
+  version: "{{ dev_env.terraform.providers.libvirt.version.base }}"
+  repo: "{{ libvirt_provider_repo_url }}"
+  release_url: "{{ libvirt_provider_repo_url }}/releases/download/v{{ dev_env.terraform.providers.libvirt.version.base }}"
+  tarball: "{{ dev_env.terraform.providers.libvirt.repo.name }}-{{ dev_env.terraform.providers.libvirt.version.full }}.{{ dev_env.distro.name | replace('SLES', 'SLE') }}.{{ dev_env.distro.arch }}.tar.gz"
+  sha256: "{{ dev_env.terraform.providers.libvirt.repo.name }}-{{ dev_env.terraform.providers.libvirt.version.base }}.sha256"

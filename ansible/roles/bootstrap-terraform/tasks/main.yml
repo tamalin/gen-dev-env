@@ -1,0 +1,44 @@
+---
+
+- name: Download terraform {{ terraform_version }} zip file
+  get_url:
+    url: "{{ terraform_url }}"
+    dest: "{{ role_path }}/files/{{ terraform_zip_file }}"
+    checksum: "sha256:{{ terraform_sha256_url }}"
+  check_mode: "{{ ansible_version.full is version('2.10', '>=') }}"
+  register: download_terraform_result
+
+- name: Check if there is already an existing terraform command
+  stat:
+    path: "{{ dev_env.terraform.command }}"
+  register: terraform_command_stat_result
+
+- name: Check installed terraform version
+  command: >-
+    {{ dev_env.terraform.command }} version
+  register: terraform_version_result
+  changed_when: false
+  when:
+    - terraform_command_stat_result.stat.exists
+
+- name: Determine installed terraform version
+  set_fact:
+    terraform_installed_version: >-
+      {% if terraform_version_result is skipped %}UNKNOWN{%
+         else %}{{ terraform_version_result.stdout_lines[0].split()[1] }}{%
+         endif %}
+
+- name: Extract terraform {{ terraform_version }} archive to {{ dev_env.dirs.bin }}
+  unarchive:
+    src: "{{ role_path }}/files/{{ terraform_zip_file }}"
+    dest: "{{ dev_env.dirs.bin }}"
+  when:
+    - terraform_installed_version != "v" ~ terraform_version
+
+- name: Create local plugins directory
+  file:
+    path: "{{ dev_env.dirs.terraform_plugins }}"
+    state: "directory"
+
+- name: Setup {{ dev_env.terraform.providers.libvirt.repo.name }}
+  include_tasks: "{{ dev_env.terraform.providers.libvirt.repo.name }}.yml"

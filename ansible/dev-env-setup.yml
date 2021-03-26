@@ -1,0 +1,22 @@
+---
+
+- hosts: localhost
+  tasks:
+
+  - name: Boostrap the Ansible environment
+    import_role:
+      name: bootstrap-ansible
+    tags:
+      - ansible
+
+  - name: Boostrap the terraform environment
+    import_role:
+      name: bootstrap-terraform
+    tags:
+      - terraform
+
+  - name: Boostrap the go environment
+    import_role:
+      name: bootstrap-go
+    tags:
+      - go

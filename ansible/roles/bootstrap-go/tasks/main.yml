@@ -1,0 +1,59 @@
+---
+
+- name: Retrieve available go version details
+  uri:
+    url: "{{ go_download_base_url }}/?mode=json"
+  check_mode: False
+  register: go_versions_lookup_result
+
+- name: Select latest available version of go
+  set_fact:
+    go_version_details: "{{ go_versions_lookup_result.json | sort(attribute='version') | last }}"
+  check_mode: False
+
+- name: Retrieve {{ go_version }} tarball
+  get_url:
+    url: "{{ go_download_base_url }}/{{ go_linux_arch.filename }}"
+    dest: "{{ go_tar_file }}"
+    checksum: "sha256:{{ go_linux_arch.sha256 }}"
+
+- name: Check if there is already an existing go command
+  stat:
+    path: "{{ dev_env.go.command }}"
+    follow: True
+  register: go_command_stat_result
+
+- name: Check installed go version
+  command: >-
+    {{ dev_env.go.command }} version
+  register: go_version_result
+  changed_when: false
+  when:
+    - go_command_stat_result.stat.exists
+
+- name: Determine installed go version
+  set_fact:
+    go_installed_version: >-
+      {% if go_version_result is skipped %}UNKNOWN{%
+         else %}{{ go_version_result.stdout_lines[0].split()[2] }}{%
+         endif %}
+
+- name: Delete existing go hierarchy if version changed
+  file:
+    path: "{{ dev_env.dirs.go }}"
+    state: "absent"
+  when:
+    - go_installed_version != go_version
+
+- name: Unpack {{ go_linux_arch.version }} tarball to {{ dev_env.dirs.go }}
+  unarchive:
+    src: "{{ go_tar_file }}"
+    dest: "{{ dev_env.dirs.root }}"
+  args:
+    creates: "{{ dev_env.dirs.go }}"
+
+- name: Symlink {{ go_linux_arch.version }} into {{ dev_env.dirs.bin }}
+  file:
+    path: "{{ dev_env.go.command }}"
+    src: "{{ dev_env.dirs.go }}/bin/go"
+    state: "link"

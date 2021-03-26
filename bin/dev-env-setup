@@ -1,0 +1,98 @@
+#!/bin/bash
+
+cmd_dir="$(dirname "$(readlink -e "${BASH_SOURCE}")")"
+dev_env_root="$(dirname "${cmd_dir}")"
+
+set -eu
+
+export DEV_ENV_ANSIBLE_VERSION=${DEV_ENV_ANSIBLE_VERSION:-2.9}
+export DEV_ENV_TERRAFORM_VERSION=${DEV_ENV_TERRAFORM_VERSION:-0.14.9}
+
+error()
+{
+    echo 1>&2 "ERR: $@"
+}
+
+get_distro_name()
+{
+    (. /etc/os-release; echo "${ID}")
+}
+
+pkg_mgr_init()
+{
+    typeset -g pkg_mgr
+
+    case "$(get_distro_name)" in
+    (ubuntu|debian)
+        pkg_mgr="apt-get"
+        ;;
+    (sles|opensuse*)
+        pkg_mgr="zypper"
+        ;;
+    (*)
+        error "Unsupported distibution: '$(get_distro_name)'"
+        exit 1
+        ;;
+    esac
+}
+
+pkg_mgr_refresh()
+{
+    typeset -g pkg_mgr pkg_mgr_refreshed
+
+    if [[ -z "${pkg_mgr:-}" ]]; then
+        pkg_mgr_init
+    fi
+
+    if [[ -n "${pkg_mgr_refreshed:-}" ]]; then
+        return
+    fi
+
+    case "${pkg_mgr}" in
+    (apt-get)
+        sudo ${pkg_mgr} update --quiet
+        ;;
+    (zypper)
+        sudo ${pkg_mgr} --gpg-auto-import-keys --quiet refresh 
+        ;;
+    esac
+
+    pkg_mgr_refreshed=true
+}
+
+pkg_mgr_install()
+{
+    typeset -g pkg_mgr
+
+    pkg_mgr_refresh
+
+    case "${pkg_mgr}" in
+    (apt-get)
+        sudo env DEBIAN_FRONTEND=noninteractive ${pkg_mgr} --quiet --yes install "${@}"
+        ;;
+    (zypper)
+        sudo ${pkg_mgr} --gpg-auto-import-keys --quiet --non-interactive install --no-confirm "${@}"
+        ;;
+    esac
+}
+
+bootstrap_ansible()
+{
+    local acmd="ansible-playbook" apkg="ansible"
+
+    if [[ -z "$(which ansible)" ]]; then
+        pkg_mgr_install ansible
+    fi
+
+    case "$(which "${acmd}")" in
+    ("* not found")
+        pkg_mgr_install "${apkg}"
+    esac
+
+    ansible-playbook -i ${dev_env_root}/ansible/localhost.yml ${dev_env_root}/ansible/dev-env-setup.yml
+}
+
+# Main body of script
+bootstrap_ansible
+
+# vim:expandtab:shiftwidth=4:tabstop=4:autoindent:showmatch

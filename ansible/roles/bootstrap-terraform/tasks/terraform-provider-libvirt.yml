@@ -1,0 +1,20 @@
+---
+
+- name: Download {{ dev_env.terraform.providers.libvirt.version.full }} release
+  get_url:
+    url: "{{ libvirt_provider.release_url }}/{{ libvirt_provider.tarball }}"
+    dest: "{{ role_path }}/files/{{ libvirt_provider.tarball }}"
+    checksum: "sha256:{{ libvirt_provider.release_url }}/{{ libvirt_provider.sha256 }}"
+  check_mode: "{{ ansible_version.full is version('2.10', '>=') }}"
+
+- name: Create {{ libvirt_provider.source }}/{{ libvirt_provider.version }} under terraform plugins directory
+  file:
+    path: "{{ dev_env.dirs.terraform_plugins }}/{{ libvirt_provider.source }}/{{ libvirt_provider.version }}/{{ terraform_arch }}"
+    state: "directory"
+
+- name: Extract {{ libvirt_provider.tarball }} to {{ libvirt_provider.source }} directory
+  unarchive:
+    src: "{{ role_path }}/files/{{ libvirt_provider.tarball }}"
+    dest: "{{ dev_env.dirs.terraform_plugins }}/{{ libvirt_provider.source }}/{{ libvirt_provider.version }}/{{ terraform_arch }}"
+  args:
+    creates: "{{ dev_env.dirs.terraform_plugins }}/{{ libvirt_provider.source }}/{{ libvirt_provider.version }}/{{ terraform_arch }}/{{ dev_env.terraform.providers.libvirt.repo.name }}"

@@ -1,0 +1,11 @@
+---
+
+go_download_base_url: "https://golang.org/dl"
+
+# go_version_details is dynamically defined
+go_linux_arch: "{{ go_version_details.files |
+                   selectattr('kind', 'equalto', 'archive') |
+                   selectattr('filename', 'search', 'linux-amd64') |
+                   list | first }}"
+go_version: "{{ go_linux_arch.version }}"
+go_tar_file: "{{ role_path }}/files/{{ go_linux_arch.filename }}"

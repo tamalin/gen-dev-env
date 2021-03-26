@@ -1,0 +1,45 @@
+---
+
+dev_env_ansible: "{{ inventory_file | dirname }}"
+dev_env_root: "{{ dev_env_ansible | dirname }}"
+
+dev_env_distro_stream: "{{ ansible_distribution | replace(' ', '_') }}"
+dev_env_distro_version: "{% if ansible_distribution == 'SLES' %}{{ ansible_distribution_major_version ~ '_SP' ~ ansible_distribution_release }}{% else %}{{ ansible_distribution_version }}{% endif %}"
+dev_env_distro_arch: "{% if (ansible_distribution == 'Ubuntu') and (ansible_architecture == 'x86_64') %}amd64{% else %}{{ ansible_architecture }}{% endif %}"
+
+dev_env_terraform_inventory_script_url: "https://github.com/nbering/terraform-inventory/raw/master/terraform.py"
+dev_env_terraform_version: "{{ lookup('env', 'DEV_ENV_TERRAFORM_VERSION') | default('0.14.9', true) }}"
+dev_env_terraform_provider_libvirt_version: "{{ lookup('env', 'DEV_ENV_TERRAFORM_PROVIDER_LIBVIRT_VERSION') | default('0.6.3+git.1604843676.67f4f2aa', true) }}"
+
+dev_env:
+  distro:
+    arch: "{{ dev_env_distro_arch }}"
+    family: "{{ ansible_distribution_file_variety | lower }}"
+    name: "{{ dev_env_distro_stream ~ '_' ~ dev_env_distro_version }}"
+    stream: "{{ dev_env_distro_stream }}"
+    version: "{{ dev_env_distro_version }}"
+  dirs:
+    ansible: "{{ dev_env_root }}/ansible"
+    bin: "{{ dev_env_root }}/bin"
+    go: "{{ dev_env_root }}/go"
+    root: "{{ dev_env_root }}"
+    terraform_plugins: "~/.local/share/terraform/plugins/registry.terraform.io"
+  terraform:
+    command: "{{ dev_env_root }}/bin/terraform"
+    version: "{{ dev_env_terraform_version }}"
+    providers:
+      libvirt:
+        repo:
+          name: "terraform-provider-libvirt"
+          organisation: "dmacvicar"
+        version:
+          full: "{{ dev_env_terraform_provider_libvirt_version }}"
+          base: "{{ dev_env_terraform_provider_libvirt_version.split('+')[0] }}"
+  ansible:
+    min_ver: 2.9
+    inventory:
+      url: "{{ dev_env_terraform_inventory_script_url }}"
+      path: "{{ dev_env_ansible }}/{{ dev_env_terraform_inventory_script_url | basename }}"
+  go:
+    command: "{{ dev_env_root }}/bin/go"
+    version: "{{ lookup('env', 'DEV_ENV_GO_VERSION') | default('1.16.2', true) }}"
