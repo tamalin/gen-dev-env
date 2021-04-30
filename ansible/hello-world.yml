@@ -6,6 +6,7 @@
   - name: Echo "Hello world!" on each node as root
     become: yes
     command: "echo 'Hello World!'"
+    changed_when: false
     register: echo_result
 
   - name: Show the result of the echo command

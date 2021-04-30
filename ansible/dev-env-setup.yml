@@ -3,11 +3,21 @@
 - hosts: localhost
   tasks:
 
+  - name: Show running distro info
+    debug:
+      var: dev_env.distro
+
   - name: Boostrap the Ansible environment
     import_role:
       name: bootstrap-ansible
     tags:
       - ansible
+
+  - name: Boostrap the libvirt environment
+    import_role:
+      name: bootstrap-libvirt
+    tags:
+      - libvirt
 
   - name: Boostrap the terraform environment
     import_role:

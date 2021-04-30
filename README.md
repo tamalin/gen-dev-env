@@ -17,7 +17,7 @@ The dev-env-setup script performs the following actions:
 * Installs the github:nbering/terraform-inventory/terraform.py inventory
   script for use with terraform deployed systems.
 
-* Downloads a version of terraform (0.14.9 as of writing this, but can be
+* Downloads a version of terraform (0.15.1 as of writing this, but can be
   overriden using the `DEV_ENV_TERRAFORM_VERSION` env var) to the bin
   directory under this repo
 

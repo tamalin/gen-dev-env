@@ -1,0 +1,42 @@
+---
+
+libvirt_packages:
+  Ubuntu:
+    common:
+      - qemu-kvm
+      - libvirt-dev
+      - libxml2-dev
+      - libxslt-dev
+    16_04:
+      - libvirt-bin
+    18_04:
+      - libvirt-daemon-system
+      - libvirt-clients
+    20_04:
+      - libvirt-daemon-system
+      - libvirt-clients
+  openSUSE:
+    common:
+      - qemu-kvm
+      - libvirt-devel
+      - libvirt-python
+      - libxml2-devel
+      - libxslt-devel
+
+libvirt_required_packages: >-
+  {{ (libvirt_packages[dev_env.distro.stream]['common'] | default([])) +
+     (libvirt_packages[dev_env.distro.stream][dev_env.distro.id] |
+      default([])) }}
+
+libvirt_group: >-
+  {{ ((dev_env.distro.stream == "Ubuntu") and
+      ((dev_env.distro.version | float) <= 16.04)) |
+      ternary('libvirtd', 'libvirt') }}
+
+libvirt_service: >-
+  {{ (libvirt_group == 'libvirtd') |
+     ternary('libvirt-bin', 'libvirtd') }}
+
+libvirt_required_services: >-
+  {{ [libvirt_service] + ((dev_env.distro.stream == "Ubuntu") |
+                          ternary(['qemu-kvm'], [])) }}

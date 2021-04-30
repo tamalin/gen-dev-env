@@ -5,8 +5,7 @@ dev_env_root="$(dirname "${cmd_dir}")"
 
 set -eu
 
-export DEV_ENV_ANSIBLE_VERSION=${DEV_ENV_ANSIBLE_VERSION:-2.9}
-export DEV_ENV_TERRAFORM_VERSION=${DEV_ENV_TERRAFORM_VERSION:-0.14.9}
+export DEV_ENV_TERRAFORM_VERSION=${DEV_ENV_TERRAFORM_VERSION:-0.15.1}
 
 error()
 {
@@ -76,7 +75,7 @@ pkg_mgr_install()
     esac
 }
 
-bootstrap_ansible()
+bootstrap_dev_env_using_ansible()
 {
     local acmd="ansible-playbook" apkg="ansible"
 
@@ -93,6 +92,6 @@ bootstrap_ansible()
 }
 
 # Main body of script
-bootstrap_ansible
+bootstrap_dev_env_using_ansible
 
 # vim:expandtab:shiftwidth=4:tabstop=4:autoindent:showmatch

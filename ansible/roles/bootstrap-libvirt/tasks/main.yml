@@ -1,0 +1,64 @@
+---
+
+- name: Install required packages
+  become: yes
+  package:
+    name: "{{ libvirt_required_packages }}"
+    state: "present"
+  register: required_packages_installed
+
+# The security driver blocks being able to use a directory
+# other than the standard distro directories for hosting images
+# stopping us from using custom pools
+- name: Disable libvirt qemu security driver
+  become: yes
+  lineinfile:
+    path: /etc/libvirt/qemu.conf
+    line: 'security_driver = "none"'
+    regexp: '^security_driver =.*'
+    insertafter: '# isolation, but it cannot appear in a list of drivers.'
+    state: present
+  register: libvirt_qemu_conf_security_driver
+
+- name: Ensure required services are enabled
+  become: yes
+  service:
+    name: "{{ item }}"
+    enabled: true
+  loop: "{{ libvirt_required_services }}"
+
+- name: Restart required services if packages or configs were changes
+  become: yes
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop: "{{ libvirt_required_services }}"
+  when:
+    - (required_packages_installed is changed or
+       libvirt_qemu_conf_security_driver is changed)
+  register: required_services_restart
+
+- name: Ensure required services are actually running
+  become: yes
+  service:
+    name: "{{ item }}"
+    state: restarted
+  loop: "{{ libvirt_required_services }}"
+  when:
+    - required_services_restart is skipped
+
+- name: Add user to required groups
+  become: yes
+  user:
+    name: "{{ ansible_user_id }}"
+    append: yes
+    groups: ['kvm', "{{ libvirt_group }}"]
+  register: add_user_to_groups
+
+- name: Require user to re-login if group membership changed
+  fail:
+    msg: >
+      User '{{ ansible_user_id }}' groups membership changed so
+      a re-login is required to pick up the updated jobs membership
+  when:
+    - add_user_to_groups is changed
